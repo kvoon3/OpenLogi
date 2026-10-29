@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.20] - 2026-10-29
+
+### Fixed
+
+- *(windows)* mark extended virtual keys with KEYEVENTF_EXTENDEDKEY ([#1958](https://github.com/AprilNEA/OpenLogi/pull/1958))
+- *(overlay)* keep the macos actions ring from taking key focus ([#2152](https://github.com/AprilNEA/OpenLogi/pull/2152))
+
 ## [0.8.19] - 2026-10-29
 
 ### Added
