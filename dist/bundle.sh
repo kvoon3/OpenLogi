@@ -53,6 +53,14 @@ install -m 755 "$BIN/openlogi-overlay" \
 rm -rf "$OUT/Contents/Frameworks"
 rm -f "$OUT/Contents/Library/LoginItems/OpenLogi Agent.app/Contents/embedded.provisionprofile"
 
+# Strip the upstream Sparkle keys: this build links no Sparkle (the framework is
+# gone above) and updates through the built-in engine with no signing key, so a
+# feed URL here would only be a promise the bundle cannot keep.
+for key in SUFeedURL SUPublicEDKey SUAllowsAutomaticUpdates SUEnableAutomaticChecks \
+	SUEnableSystemProfiling SUVerifyUpdateBeforeExtraction; do
+	/usr/libexec/PlistBuddy -c "Delete :$key" "$OUT/Contents/Info.plist" >/dev/null 2>&1 || true
+done
+
 # Everything below must be in place before signing: a signature seals the bundle.
 {
 	printf 'OpenLogi fork: Screenflare actions (FORK.md)\n'
