@@ -197,7 +197,9 @@ Bottom = { action = "ScreenflareToggleRecording", label = "Record / Stop" }
    cargo run -q -p openlogi-inject --example screenflare -- capture-fullscreen
    cargo run -q -p openlogi-inject --example screenflare -- toggle
    ```
-6. `dist/install.sh --rollback    # or: brew reinstall --cask openlogi` restores the upstream bundle from `OpenLogi.upstream.app`.
+6. `dist/install.sh --rollback` restores the bundle it replaced (kept in `dist/`,
+   never beside it — two bundles with one identifier confuse Launch Services), or
+   `brew reinstall --cask openlogi` puts the signed release back.
 
 ## What this fork does not do
 

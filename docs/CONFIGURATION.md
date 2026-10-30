@@ -434,6 +434,11 @@ Top = { action = "ScreenflareCaptureArea", label = "Capture Area" }
 Left = { action = "ScreenflareToggleRecording", label = "Record / Stop" }
 ```
 
+> **Bind in the GUI.** OpenLogi's config writer re-flows hand-edited inline tables and
+> mis-anchors new table headers onto surrounding comment lines, which has produced TOML
+> the app then refuses to load. The snippets above are for reading; the button and ring
+> editors write the same values correctly and keep `config.toml.backup.1` … `.5`.
+
 Every action runs `screenflare-ctl action <id> --no-wait --json` detached, so the
 gesture thread never waits for a capture over the user's overlay. The tool is
 found on `SCREENFLARE_CTL`, `~/bin`, `~/.local/bin`, `~/i/screenflare-ctl/bin`,
