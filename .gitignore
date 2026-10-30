@@ -85,4 +85,7 @@ node_modules/
 /.flatpak-builder/
 /build/
 /repo/
-dist/OpenLogi.app/
+
+# Built bundles never enter the repo: `dist/*.app` is an assembled copy of the
+# upstream app (signed binaries, Assets.car, icons) and must not be redistributed.
+dist/*.app/
