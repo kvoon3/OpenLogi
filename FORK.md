@@ -113,15 +113,16 @@ launched, the picker showing the Screenflare group, and a physical button press.
 
 ## Tool discovery
 
-`run_screenflare` looks for `screenflare-ctl` in this order, so a launchd-started
-agent (whose `PATH` is `/usr/bin:/bin:/usr/sbin:/sbin`) still finds a user install:
+The URL path needs no lookup at all. The fallback looks for `screenflare-ctl` in this
+order, so a launchd-started agent (whose `PATH` is `/usr/bin:/bin:/usr/sbin:/sbin`) still
+finds a user install:
 
 1. `$SCREENFLARE_CTL`
 2. `~/bin`, `~/.local/bin`, `<screenflare-ctl checkout>/bin`
 3. `/opt/homebrew/bin`, `/usr/local/bin`
 4. every `PATH` entry
 
-Missing tool → one `tracing::warn` per press, no other effect.
+Missing scheme *and* missing tool → one `tracing::warn` per press, no other effect.
 
 ## Update guard — read before installing this build
 

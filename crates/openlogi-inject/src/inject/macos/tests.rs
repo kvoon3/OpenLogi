@@ -92,7 +92,21 @@ fn posted_key_edges_carry_the_synthetic_tag() {
 }
 
 #[test]
-fn screenflare_action_spawns_ctl_detached_with_the_mapped_arguments() {
+fn screenflare_actions_open_the_app_url() {
+    // The URL is the whole contract with ScreenflareX: one scheme, the id as the host.
+    assert_eq!(
+        super::screenflare_url("capture-window"),
+        "screenflarex://capture-window"
+    );
+    assert_eq!(super::screenflare_url("toggle"), "screenflarex://toggle");
+    assert_eq!(
+        super::screenflare_url("stop-recording"),
+        "screenflarex://stop-recording"
+    );
+}
+
+#[test]
+fn screenflare_fallback_spawns_ctl_detached_with_the_mapped_arguments() {
     use std::os::unix::fs::PermissionsExt;
 
     let dir = std::env::temp_dir().join(format!("openlogi-screenflare-{}", std::process::id()));

@@ -585,14 +585,31 @@ pub(super) fn run_apple_script(src: &str) {
 /// `Command::output()` would freeze every other button for that whole time.
 /// Detach instead: null stdio, no wait, and a short-lived thread reaps the child.
 pub(super) fn run_screenflare(command: &str) {
+    // Preferred: hand the command to ScreenflareX's own URL scheme. The app performs it
+    // in-process, so there is no child process, no Accessibility lookup, and nothing to
+    // break when a helper CLI is rebuilt.
+    let url = screenflare_url(command);
+    match opener::open(&url) {
+        Ok(()) => return tracing::debug!(action = command, %url, "opened screenflarex url"),
+        Err(error) => {
+            tracing::debug!(%error, action = command, "screenflarex url not registered");
+        }
+    }
+    // Fallback: a stock Screenflare has no URL scheme, so the AX helper still does the
+    // work when it is installed.
     if let Some(ctl) = screenflare_ctl() {
         spawn_screenflare(&ctl, command);
     } else {
         tracing::warn!(
             action = command,
-            "screenflare-ctl not found; install it or set SCREENFLARE_CTL"
+            "neither screenflarex:// nor screenflare-ctl is available; see FORK.md"
         );
     }
+}
+
+/// The URL that runs `command` inside ScreenflareX. Same vocabulary as the CLI.
+fn screenflare_url(command: &str) -> String {
+    format!("screenflarex://{command}")
 }
 
 /// Run `screenflare-ctl action <command> --no-wait --json`, detached.

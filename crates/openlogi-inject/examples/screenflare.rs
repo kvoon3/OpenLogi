@@ -2,8 +2,8 @@
 //!
 //! Fires one [`Action::Screenflare*`] through the same dispatch path a button
 //! press takes (`openlogi_inject::execute`), so the whole chain can be checked
-//! without a mouse: `Action` → `Effect::Screenflare` → `screenflare-ctl` →
-//! Screenflare's own menu item.
+//! without a mouse: `Action` → `Effect::Screenflare` → `screenflarex://<id>` →
+//! ScreenflareX performs its own menu item.
 //!
 //! # Usage
 //!
@@ -12,7 +12,7 @@
 //! cargo run --example screenflare -p openlogi-inject -- toggle
 //! ```
 //!
-//! Argument names are the `screenflare-ctl` subcommands. `toggle` needs nothing
+//! Argument names are the action ids `screenflarex://` answers to. `toggle` needs nothing
 //! running to be useful: with no recording it starts one, so run it twice to see
 //! start then stop.
 
@@ -49,5 +49,5 @@ fn main() {
     };
     println!("dispatching {action:?}");
     execute(&action);
-    println!("dispatched; screenflare-ctl runs detached");
+    println!("dispatched; ScreenflareX performs it in its own process");
 }
