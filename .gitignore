@@ -85,3 +85,4 @@ node_modules/
 /.flatpak-builder/
 /build/
 /repo/
+dist/OpenLogi.app/

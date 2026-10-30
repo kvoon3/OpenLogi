@@ -56,7 +56,7 @@ crates/openlogi-ui/locales/*.toml               11 keys in all 24 catalogues
 docs/CONFIGURATION.md, docs/config.example.toml  documentation + examples
 ```
 
-Verified on this machine (`cargo fmt --check`, `cargo clippy --all-targets`, tests):
+Test suites (`cargo fmt --check`, `cargo clippy --all-targets` clean):
 
 ```
 openlogi-core        434 + 625 passed
@@ -65,18 +65,49 @@ openlogi-agent-core  625 passed
 openlogi-ui            6 + 1 catalogue-parity passed
 ```
 
-Not verified here: `openlogi-desktop` and `openlogi-overlay` do not build on this
-machine — GPUI compiles `src/shaders.metal` in its build script, and this Mac only
-has Command Line Tools (`xcrun: unable to find utility "metal"`). The one desktop
-line this fork changes is an arm in an exhaustive `match` over `Action`
-(`binding_editor.rs::action_icon`), which parses and type-checks as written but has
-not been compiled. Install full Xcode 26 + the Metal Toolchain component to build
-the GUI:
+## Build
+
+`cargo run -p xtask -- macos bundle` is the supported path, but it shells out to
+`actool` and `xcrun` under Xcode 26 (Icon Composer), so it cannot run on a Command
+Line Tools-only Mac. This fork builds the way that machine can:
 
 ```sh
-sudo xcode-select -s /Applications/Xcode.app
-xcodebuild -downloadComponent MetalToolchain
+# 1. binaries. Two build-time settings matter — see below.
+OPENLOGI_UPDATE_BASE_URL=https://updates.invalid \
+  cargo build --release -p openlogi-desktop -p openlogi-overlay \
+                     -p openlogi-agent -p openlogi
+
+# 2. bundle: borrows the layout of an installed upstream OpenLogi.app (Info.plists,
+#    icons, the LaunchAgent that starts the agent, the nested helper apps), swaps in
+#    the four release binaries, ad-hoc signs it.
+dist/bundle.sh                 # → dist/OpenLogi.app
+dist/install.sh                # → /Applications/OpenLogi.app, old one kept as .upstream.app
+dist/install.sh --rollback
 ```
+
+The two settings, both deliberate:
+
+* **`gpui_platform/runtime_shaders`** (enabled in the workspace `Cargo.toml`). GPUI's
+  build script otherwise compiles `shaders.metal` with `xcrun metal`; with the feature
+  it stitches the source into the binary and the Metal driver compiles it on first
+  launch. Identical rendering, a few milliseconds slower first launch, no Xcode.
+  Revert that `Cargo.toml` line to build the upstream way.
+* **`OPENLOGI_UPDATE_BASE_URL=https://updates.invalid`**. The update host is compiled
+  in; pointing it at a non-resolving domain means a check fails closed instead of
+  fetching a signed upstream bundle that would erase this patch. With no Sparkle key
+  and no minisign key the bundle carries the built-in engine, which refuses every
+  manifest by design.
+
+Consequence of the shortcut: the bundle is **ad-hoc signed**, and macOS keys
+Accessibility / Input Monitoring grants to the signature, so both are asked for again
+after installing. It also ships no Sparkle framework and no agent provisioning
+profile (the agent falls back to `CGEventPost` rather than the virtual HID keyboard;
+neither affects Screenflare actions).
+
+Status: all four release binaries build, `dist/bundle.sh` produces a bundle that
+passes `codesign --verify --deep --strict`, its embedded CLI runs (`openlogi 0.8.19`),
+and the GUI binary carries the new locale strings. **Not yet verified:** the bundle
+launched, the picker showing the Screenflare group, and a physical button press.
 
 ## Tool discovery
 
@@ -116,9 +147,12 @@ agent, so **restart OpenLogi** after installing.
 
 ## Trying it
 
-1. `make -C ~/i/screenflare-ctl install` (or `bin/` in place — discovery covers it).
-2. Install the patched bundle, restart OpenLogi.
-3. Button editor → action picker → **Screenflare**, or in `config.toml`:
+1. `make -C ~/i/screenflare-ctl install` (or leave `bin/screenflare-ctl` in place —
+   discovery covers `~/i/screenflare-ctl/bin`).
+2. `dist/bundle.sh && dist/install.sh` — quits OpenLogi, installs the fork, relaunches.
+3. Grant **Accessibility** and **Input Monitoring** to OpenLogi and OpenLogi Agent
+   again (the ad-hoc signature is new to TCC).
+4. Button editor → action picker → **Screenflare**, or in `config.toml`:
 
 ```toml
 [devices."unit:69ac62c8".bindings]
@@ -130,8 +164,9 @@ Top = { action = "ScreenflareCaptureArea", label = "Capture Area" }
 Bottom = { action = "ScreenflareToggleRecording", label = "Record / Stop" }
 ```
 
-4. Press it. Expected: Screenflare's overlay appears, OpenLogi stays responsive,
-   the finished file lands in `~/Screenflare/screenshots`.
+5. Press it. Expected: Screenflare's overlay appears, OpenLogi stays responsive, the
+   finished file lands in `~/Screenflare/screenshots`.
+6. `dist/install.sh --rollback` restores the upstream bundle from `OpenLogi.upstream.app`.
 
 ## What this fork does not do
 
