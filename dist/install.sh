@@ -2,7 +2,7 @@
 # Replace /Applications/OpenLogi.app with the fork build in dist/.
 #
 # Interrupts the running app: the GUI, the agent and the overlay all have to stop
-# before their bundle is swapped. The upstream bundle is kept beside it as
+# before their bundle is swapped. The upstream bundle is kept in dist/ as
 # OpenLogi.upstream.app so `--rollback` can put it back.
 #
 # The new bundle is ad-hoc signed, so macOS will ask for Accessibility and Input
@@ -13,7 +13,9 @@ set -eu
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
 FORK=$ROOT/dist/OpenLogi.app
 TARGET=/Applications/OpenLogi.app
-BACKUP=/Applications/OpenLogi.upstream.app
+# Keep the backup OUT of /Applications: two bundles with one CFBundleIdentifier
+# confuse Launch Services and per-signature TCC records.
+BACKUP=$ROOT/dist/OpenLogi.upstream.app
 
 usage() {
 	sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//'

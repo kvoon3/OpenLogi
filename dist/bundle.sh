@@ -14,7 +14,15 @@
 set -eu
 
 ROOT=$(cd "$(dirname "$0")/.." && pwd)
-SRC=${OPENLOGI_TEMPLATE_APP:-/Applications/OpenLogi.app}
+# Template lookup: an explicit override, the installed app, then Homebrew's
+# Caskroom (which keeps the pristine upstream bundle even after an uninstall).
+find_template() {
+	if [ -n "${OPENLOGI_TEMPLATE_APP:-}" ]; then printf '%s\n' "$OPENLOGI_TEMPLATE_APP"; return; fi
+	for candidate in /Applications/OpenLogi.app /opt/homebrew/Caskroom/openlogi/*/OpenLogi.app; do
+		[ -d "$candidate" ] && { printf '%s\n' "$candidate"; return; }
+	done
+}
+SRC=$(find_template)
 OUT=$ROOT/dist/OpenLogi.app
 BIN=$ROOT/target/release
 
@@ -28,7 +36,7 @@ for binary in openlogi-desktop openlogi openlogi-agent openlogi-overlay; do
 	fi
 done
 
-if [ ! -d "$SRC" ]; then
+if [ -z "$SRC" ] || [ ! -d "$SRC" ]; then
 	echo "template bundle not found: $SRC" >&2
 	echo "set OPENLOGI_TEMPLATE_APP to an installed OpenLogi.app, or install it with:" >&2
 	echo "  brew install --cask openlogi" >&2
@@ -71,10 +79,27 @@ done
 find "$OUT" -name _CodeSignature -type d -prune -exec rm -rf {} +
 
 # Deepest code first: the outer signature seals the nested helper signatures.
-codesign --force --sign - --timestamp=none "$OUT/Contents/Library/LoginItems/OpenLogi Agent.app"
-codesign --force --sign - --timestamp=none "$OUT/Contents/Library/LoginItems/OpenLogi Overlay.app"
-codesign --force --sign - --timestamp=none "$OUT"
+#
+# Each signature carries an identifier-only designated requirement. Ad-hoc signing
+# would otherwise pin the requirement to this build's cdhash, and both privacy
+# grants (TCC stores the requirement per client) and launchd's constraint would
+# then break on every rebuild. `identifier "org.openlogi.agent"` survives a
+# rebuild, so Accessibility and Input Monitoring keep working across builds.
+sign() {
+	[ -d "$1" ] || return 0
+	id=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleIdentifier' "$1/Contents/Info.plist" 2>/dev/null || true)
+	if [ -z "$id" ]; then
+		printf 'no CFBundleIdentifier in %s\n' "$1" >&2
+		exit 1
+	fi
+	codesign --force --sign - --timestamp=none --identifier "$id" \
+		--requirements "=designated => identifier \"$id\"" "$1"
+}
+sign "$OUT/Contents/Library/LoginItems/OpenLogi Agent.app"
+sign "$OUT/Contents/Library/LoginItems/OpenLogi Overlay.app"
+sign "$OUT"
 codesign --verify --deep --strict "$OUT"
+echo "agent designated requirement: $(codesign -d -r- "$OUT/Contents/Library/LoginItems/OpenLogi Agent.app" 2>&1 | tail -1)"
 
 echo "Bundle ready: $OUT"
 codesign -dv "$OUT" 2>&1 | sed -n '1,4p'

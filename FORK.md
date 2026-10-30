@@ -81,8 +81,8 @@ OPENLOGI_UPDATE_BASE_URL=https://updates.invalid \
 #    icons, the LaunchAgent that starts the agent, the nested helper apps), swaps in
 #    the four release binaries, ad-hoc signs it.
 dist/bundle.sh                 # → dist/OpenLogi.app
-dist/install.sh                # → /Applications/OpenLogi.app, old one kept as .upstream.app
-dist/install.sh --rollback
+dist/install.sh                # → /Applications/OpenLogi.app (backup in dist/, never beside it)
+dist/install.sh --rollback    # or: brew reinstall --cask openlogi
 ```
 
 The two settings, both deliberate:
@@ -150,13 +150,29 @@ agent, so **restart OpenLogi** after installing.
 1. `make -C ~/i/screenflare-ctl install` (or leave `bin/screenflare-ctl` in place —
    discovery covers `~/i/screenflare-ctl/bin`).
 2. `dist/bundle.sh && dist/install.sh` — quits OpenLogi, installs the fork, relaunches.
-3. Grant **Accessibility** and **Input Monitoring** to OpenLogi and OpenLogi Agent
-   again (the ad-hoc signature is new to TCC), and allow the background item:
-   **System Settings ▸ General ▸ Login Items & Extensions ▸ Allow in the Background
-   ▸ OpenLogi**. Until that switch is on, `launchctl print gui/$UID/org.openlogi.agent.service`
-   reports `last exit code = 78: EX_CONFIG` and the GUI says it cannot reach the
-   background service — the agent simply never starts, so no binding fires. The
-   switch is per signature, so **every rebuild needs it again**.
+3. The agent cannot start through SMAppService — re-signing trips launchd's
+   launch constraint (`OS_REASON_CODESIGNING | Launch Constraint Violation`,
+   `last exit code = 78: EX_CONFIG` in `launchctl print`), and no Login Items
+   toggle can fix that because the toggle records *approval*, not a *constraint*.
+   Start it from a user LaunchAgent instead:
+
+   ```sh
+   dist/agent-launchagent.sh install     # ~/Library/LaunchAgents/app.openlogi.agent.fork.plist
+   dist/agent-launchagent.sh uninstall
+   ```
+
+   Because launchd execs that job directly, macOS attributes privacy grants to
+   **OpenLogi Agent**, not to OpenLogi: add
+   `/Applications/OpenLogi.app/Contents/Library/LoginItems/OpenLogi Agent.app` to
+   **System Settings ▸ Privacy & Security ▸ Accessibility** and **Input
+   Monitoring** (`＋`, then ⌘⇧G to paste the path). Verify with
+   `openlogi api status --json` — `accessibility_granted`, `input_monitoring_granted`
+   and `hook_installed` must all be `true`.
+
+   `dist/bundle.sh` signs each nested bundle with an identifier-only designated
+   requirement (`designated => identifier "org.openlogi.agent"`), so those grants
+   survive rebuilds; a cdhash-pinned requirement would invalidate them every time.
+
 4. Button editor → action picker → **Screenflare**, or in `config.toml`:
 
 ```toml
@@ -179,7 +195,7 @@ Bottom = { action = "ScreenflareToggleRecording", label = "Record / Stop" }
    cargo run -q -p openlogi-inject --example screenflare -- capture-fullscreen
    cargo run -q -p openlogi-inject --example screenflare -- toggle
    ```
-6. `dist/install.sh --rollback` restores the upstream bundle from `OpenLogi.upstream.app`.
+6. `dist/install.sh --rollback    # or: brew reinstall --cask openlogi` restores the upstream bundle from `OpenLogi.upstream.app`.
 
 ## What this fork does not do
 
