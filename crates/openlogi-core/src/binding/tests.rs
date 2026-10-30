@@ -382,6 +382,10 @@ fn all_catalog_variants_roundtrip_toml() {
 }
 
 #[test]
+#[expect(
+    clippy::too_many_lines,
+    reason = "one literal per persisted variant; splitting it could hide a missing name"
+)]
 fn persisted_action_variant_names_are_stable() {
     let mut actions = Action::catalog();
     actions.extend([
@@ -463,6 +467,16 @@ fn persisted_action_variant_names_are_stable() {
         "RunAppleScript",
         "RunShellCommand",
         "Save",
+        "ScreenflareCaptureArea",
+        "ScreenflareCaptureFullscreen",
+        "ScreenflareCaptureScrolling",
+        "ScreenflareCaptureText",
+        "ScreenflareCaptureWindow",
+        "ScreenflareRecordArea",
+        "ScreenflareRecordDisplay",
+        "ScreenflareRecordWindow",
+        "ScreenflareStopRecording",
+        "ScreenflareToggleRecording",
         "Screenshot",
         "ScrollDown",
         "ScrollUp",
@@ -842,4 +856,36 @@ fn mouse_buttons_sort_ahead_of_every_keyboard_control() {
         assert_eq!(button.config_name().parse::<ButtonId>(), Ok(button));
     }
     assert_eq!(default_binding(ButtonId::control(0x01f3)), Action::None);
+}
+
+#[test]
+fn screenflare_actions_are_pickable_mapped_and_persisted() {
+    let screenflare: Vec<Action> = Action::catalog()
+        .into_iter()
+        .filter(|action| action.screenflare_command().is_some())
+        .collect();
+    assert_eq!(
+        screenflare.len(),
+        10,
+        "every Screenflare action must be offered by the picker"
+    );
+    for action in screenflare {
+        let command = action.screenflare_command().expect("filtered above");
+        assert!(!command.is_empty());
+        assert_eq!(action.category(), Category::Screenflare);
+        assert_eq!(
+            roundtrip(&action),
+            action,
+            "{command} must survive config.toml"
+        );
+        assert_matches!(action.effect(), Effect::Screenflare(_));
+        // A ring slot must accept every one of them: only `None` and
+        // `ShowActionsRing` are rejected there.
+        assert!(
+            RingAction::new(action.clone()).is_ok(),
+            "{command} must be placeable in an Actions Ring slot"
+        );
+    }
+    // A payload-free action outside the group never resolves to a command.
+    assert_eq!(Action::Copy.screenflare_command(), None);
 }

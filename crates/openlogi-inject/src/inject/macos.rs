@@ -125,6 +125,7 @@ pub(super) fn execute(action: &Action) {
         Effect::Media(key) => post_media_key(nx_key(key)),
         Effect::Native(native) => dispatch_native(native),
         Effect::Script(script) => super::dispatch_script(script),
+        Effect::Screenflare(command) => run_screenflare(command),
         // TypeText emits a unicode string, layout-independent.
         Effect::Text(text) => type_text(text),
         Effect::AgentSide => {
@@ -574,6 +575,71 @@ pub(super) fn run_apple_script(src: &str) {
     let _ = std::process::Command::new("osascript")
         .args(["-e", src])
         .output();
+}
+
+/// Run one `screenflare-ctl action <command>` without waiting for it.
+///
+/// Screenflare's captures take as long as the user keeps the overlay up — up to a
+/// minute for a scrolling capture — and its recording toggle waits for a state
+/// change. This runs on the hook/gesture dispatch thread, so a synchronous
+/// `Command::output()` would freeze every other button for that whole time.
+/// Detach instead: null stdio, no wait, and a short-lived thread reaps the child.
+pub(super) fn run_screenflare(command: &str) {
+    if let Some(ctl) = screenflare_ctl() {
+        spawn_screenflare(&ctl, command);
+    } else {
+        tracing::warn!(
+            action = command,
+            "screenflare-ctl not found; install it or set SCREENFLARE_CTL"
+        );
+    }
+}
+
+/// Run `screenflare-ctl action <command> --no-wait --json`, detached.
+fn spawn_screenflare(ctl: &std::path::Path, command: &str) {
+    let spawned = std::process::Command::new(ctl)
+        .args(["action", command, "--no-wait", "--json"])
+        .stdin(std::process::Stdio::null())
+        .stdout(std::process::Stdio::null())
+        .stderr(std::process::Stdio::null())
+        .spawn();
+    match spawned {
+        Ok(mut child) => {
+            std::thread::spawn(move || {
+                let _ = child.wait();
+            });
+            tracing::debug!(action = command, ctl = %ctl.display(), "ran screenflare-ctl");
+        }
+        Err(error) => tracing::warn!(%error, action = command, "could not spawn screenflare-ctl"),
+    }
+}
+
+/// Locate `screenflare-ctl`: an explicit override, then the two install
+/// directories next to the agent's own `PATH`, then this repo's build output.
+///
+/// The agent runs under launchd, whose `PATH` is `/usr/bin:/bin:/usr/sbin:/sbin`,
+/// so `PATH` alone would never find a Homebrew or `~/.local/bin` install.
+fn screenflare_ctl() -> Option<std::path::PathBuf> {
+    use std::path::PathBuf;
+    if let Some(explicit) = std::env::var_os("SCREENFLARE_CTL") {
+        let path = PathBuf::from(explicit);
+        if path.is_file() {
+            return Some(path);
+        }
+    }
+    let mut candidates: Vec<PathBuf> = Vec::new();
+    if let Some(home) = std::env::var_os("HOME") {
+        let home = PathBuf::from(home);
+        candidates.push(home.join("bin/screenflare-ctl"));
+        candidates.push(home.join(".local/bin/screenflare-ctl"));
+        candidates.push(home.join("i/screenflare-ctl/bin/screenflare-ctl"));
+    }
+    candidates.push(PathBuf::from("/opt/homebrew/bin/screenflare-ctl"));
+    candidates.push(PathBuf::from("/usr/local/bin/screenflare-ctl"));
+    if let Some(path) = std::env::var_os("PATH") {
+        candidates.extend(std::env::split_paths(&path).map(|dir| dir.join("screenflare-ctl")));
+    }
+    candidates.into_iter().find(|path| path.is_file())
 }
 
 pub(super) fn run_shell_command(cmd: &str) {

@@ -114,6 +114,16 @@ pub(crate) fn action_icon_path(action: &Action) -> &'static str {
         | Action::TapKeyHoldingModifiers(_)
         | Action::TypeText(_) => "action-icons/keyboard.svg",
         Action::RunAppleScript(_) | Action::RunShellCommand(_) => "action-icons/terminal.svg",
+        Action::ScreenflareCaptureArea
+        | Action::ScreenflareCaptureWindow
+        | Action::ScreenflareCaptureFullscreen => "action-icons/camera.svg",
+        Action::ScreenflareCaptureScrolling => "action-icons/scroll-text.svg",
+        Action::ScreenflareCaptureText => "action-icons/search.svg",
+        Action::ScreenflareRecordDisplay
+        | Action::ScreenflareRecordWindow
+        | Action::ScreenflareRecordArea
+        | Action::ScreenflareToggleRecording => "action-icons/play.svg",
+        Action::ScreenflareStopRecording => "action-icons/square-x.svg",
     }
 }
 

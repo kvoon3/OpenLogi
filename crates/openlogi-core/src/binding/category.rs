@@ -22,6 +22,8 @@ pub enum Category {
     Navigation,
     /// Lock screen, show desktop, system-level actions.
     System,
+    /// Screenflare captures and recordings, delegated to `screenflare-ctl`.
+    Screenflare,
 }
 
 impl Category {
@@ -37,6 +39,7 @@ impl Category {
             Category::Scroll => "Scroll",
             Category::Navigation => "Navigation",
             Category::System => "System",
+            Category::Screenflare => "Screenflare",
         }
     }
 
@@ -52,6 +55,7 @@ impl Category {
             Category::Scroll => "pointer.scroll",
             Category::Navigation => "actions.navigation",
             Category::System => "actions.system",
+            Category::Screenflare => "actions.screenflare",
         }
     }
 }

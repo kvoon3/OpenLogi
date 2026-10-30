@@ -219,6 +219,60 @@ pub enum Action {
     /// returns to the sensor's default DPI. A DPI LED (HID++ `0x1300`) is
     /// lit while the mode is on. Does nothing on other devices.
     TogglePrecisionMode,
+
+    // ── Screenflare (host integration) ──────────────────────────────────────
+    // Each variant runs `screenflare-ctl action <id> --no-wait` through the
+    // macOS injector; Screenflare itself has no automation API of its own.
+    /// Drag out a region and capture it (Screenflare `capture-area`).
+    ///
+    /// Runs `screenflare-ctl action` through the macOS injector; Screenflare
+    /// exposes no automation API of its own.
+    ScreenflareCaptureArea,
+    /// Pick a window and capture it (Screenflare `capture-window`).
+    ///
+    /// Runs `screenflare-ctl action` through the macOS injector; Screenflare
+    /// exposes no automation API of its own.
+    ScreenflareCaptureWindow,
+    /// Capture the whole display (Screenflare `capture-fullscreen`).
+    ///
+    /// Runs `screenflare-ctl action` through the macOS injector; Screenflare
+    /// exposes no automation API of its own.
+    ScreenflareCaptureFullscreen,
+    /// Capture a scrolling page as one image (Screenflare `capture-scrolling`).
+    ///
+    /// Runs `screenflare-ctl action` through the macOS injector; Screenflare
+    /// exposes no automation API of its own.
+    ScreenflareCaptureScrolling,
+    /// OCR a dragged region to the clipboard (Screenflare `capture-text`).
+    ///
+    /// Runs `screenflare-ctl action` through the macOS injector; Screenflare
+    /// exposes no automation API of its own.
+    ScreenflareCaptureText,
+    /// Start recording a display (Screenflare `record-display`).
+    ///
+    /// Runs `screenflare-ctl action` through the macOS injector; Screenflare
+    /// exposes no automation API of its own.
+    ScreenflareRecordDisplay,
+    /// Start recording one window (Screenflare `record-window`).
+    ///
+    /// Runs `screenflare-ctl action` through the macOS injector; Screenflare
+    /// exposes no automation API of its own.
+    ScreenflareRecordWindow,
+    /// Start recording a region (Screenflare `record-area`).
+    ///
+    /// Runs `screenflare-ctl action` through the macOS injector; Screenflare
+    /// exposes no automation API of its own.
+    ScreenflareRecordArea,
+    /// Stop the active recording, or start a display one (Screenflare `toggle`).
+    ///
+    /// Runs `screenflare-ctl action` through the macOS injector; Screenflare
+    /// exposes no automation API of its own.
+    ScreenflareToggleRecording,
+    /// Stop the active recording (Screenflare `stop-recording`).
+    ///
+    /// Runs `screenflare-ctl action` through the macOS injector; Screenflare
+    /// exposes no automation API of its own.
+    ScreenflareStopRecording,
 }
 
 /// Which of a held chord's keys stay down for the lifetime of the press.
@@ -333,6 +387,17 @@ macro_rules! for_each_unit_action {
             ScrollDown "Scroll Down" "actions.scroll_down" Scroll ArrowDown,
             HorizontalScrollLeft "Scroll Left" "actions.scroll_left" Scroll ScrollLeft,
             HorizontalScrollRight "Scroll Right" "actions.scroll_right" Scroll ScrollRight,
+            // Screenflare
+            ScreenflareCaptureArea "Capture Area" "actions.screenflare_capture_area" Screenflare Camera,
+            ScreenflareCaptureWindow "Capture Window" "actions.screenflare_capture_window" Screenflare Camera,
+            ScreenflareCaptureFullscreen "Capture Fullscreen" "actions.screenflare_capture_fullscreen" Screenflare Monitor,
+            ScreenflareCaptureScrolling "Scrolling Capture" "actions.screenflare_capture_scrolling" Screenflare ArrowDown,
+            ScreenflareCaptureText "Capture Text" "actions.screenflare_capture_text" Screenflare Search,
+            ScreenflareRecordDisplay "Record Display" "actions.screenflare_record_display" Screenflare Play,
+            ScreenflareRecordWindow "Record Window" "actions.screenflare_record_window" Screenflare Play,
+            ScreenflareRecordArea "Record Area" "actions.screenflare_record_area" Screenflare Play,
+            ScreenflareToggleRecording "Record / Stop" "actions.screenflare_toggle_recording" Screenflare Play,
+            ScreenflareStopRecording "Stop Recording" "actions.screenflare_stop_recording" Screenflare Ban,
         }
     };
 }
@@ -457,6 +522,28 @@ impl Action {
         match self {
             Self::HoldShortcut(combo) => Some((combo, HeldKeys::WholeChord)),
             Self::TapKeyHoldingModifiers(combo) => Some((combo, HeldKeys::ModifiersOnly)),
+            _ => None,
+        }
+    }
+
+    /// The `screenflare-ctl` subcommand this binding runs, for the Screenflare
+    /// actions. `None` for everything else.
+    ///
+    /// Keeping the mapping here — next to the variants — means the injector only
+    /// has to know the CLI's contract, not the action catalogue.
+    #[must_use]
+    pub const fn screenflare_command(&self) -> Option<&'static str> {
+        match self {
+            Self::ScreenflareCaptureArea => Some("capture-area"),
+            Self::ScreenflareCaptureWindow => Some("capture-window"),
+            Self::ScreenflareCaptureFullscreen => Some("capture-fullscreen"),
+            Self::ScreenflareCaptureScrolling => Some("capture-scrolling"),
+            Self::ScreenflareCaptureText => Some("capture-text"),
+            Self::ScreenflareRecordDisplay => Some("record-display"),
+            Self::ScreenflareRecordWindow => Some("record-window"),
+            Self::ScreenflareRecordArea => Some("record-area"),
+            Self::ScreenflareToggleRecording => Some("toggle"),
+            Self::ScreenflareStopRecording => Some("stop-recording"),
             _ => None,
         }
     }

@@ -90,3 +90,36 @@ fn posted_key_edges_carry_the_synthetic_tag() {
         );
     }
 }
+
+#[test]
+fn screenflare_action_spawns_ctl_detached_with_the_mapped_arguments() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let dir = std::env::temp_dir().join(format!("openlogi-screenflare-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("create temp dir");
+    let args_file = dir.join("args");
+    let script = dir.join("screenflare-ctl");
+    std::fs::write(
+        &script,
+        format!(
+            "#!/bin/sh\nprintf '%s\\n' \"$@\" > '{}'\n",
+            args_file.display()
+        ),
+    )
+    .expect("write fake ctl");
+    std::fs::set_permissions(&script, std::fs::Permissions::from_mode(0o755)).expect("chmod +x");
+
+    super::spawn_screenflare(&script, "capture-window");
+
+    // The child is detached on purpose; wait for its side effect instead of it.
+    let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+    while std::time::Instant::now() < deadline && !args_file.exists() {
+        std::thread::sleep(std::time::Duration::from_millis(20));
+    }
+    let recorded = std::fs::read_to_string(&args_file).expect("screenflare-ctl did not run");
+    assert_eq!(
+        recorded.lines().collect::<Vec<_>>(),
+        ["action", "capture-window", "--no-wait", "--json"]
+    );
+    let _ = std::fs::remove_dir_all(&dir);
+}

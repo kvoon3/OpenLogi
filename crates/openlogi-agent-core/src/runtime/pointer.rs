@@ -73,6 +73,7 @@ fn pointer_action_allowed(
         | Effect::HeldKey(_)
         | Effect::Text(_)
         | Effect::Script(_)
+        | Effect::Screenflare(_)
         | Effect::Native(NativeAction::AppExpose) => true,
         Effect::None
         | Effect::Click(_)

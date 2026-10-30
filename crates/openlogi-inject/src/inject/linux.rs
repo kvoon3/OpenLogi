@@ -50,6 +50,7 @@ pub(super) fn execute(action: &Action) {
         Effect::Media(key) => dispatch_media(key),
         Effect::Native(native) => dispatch_native(action, native),
         Effect::Script(script) => super::dispatch_script(script),
+        Effect::Screenflare(command) => run_screenflare(command),
         Effect::Text(text) => type_text(text),
         Effect::AgentSide => {
             tracing::debug!(
@@ -499,6 +500,12 @@ pub(super) fn type_text(text: &str) {
 
 pub(super) fn run_apple_script(_src: &str) {
     tracing::warn!("RunAppleScript is only supported on macOS");
+}
+
+/// Screenflare is driven through its macOS Accessibility tree; there is
+/// nothing for this host to run.
+pub(super) fn run_screenflare(command: &str) {
+    tracing::debug!(action = command, "screenflare actions are macOS-only");
 }
 
 pub(super) fn run_shell_command(cmd: &str) {

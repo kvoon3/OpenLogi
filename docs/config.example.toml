@@ -78,6 +78,9 @@ haptics = true
 Top = { action = "Copy", icon = "Keyboard" }
 Right = { action = { OpenApplication = { path = "/Applications/Safari.app", display_name = "Safari" } }, icon = "Applications" }
 Bottom = { action = "ShowDesktop", label = "Desktop" }
+# Screenflare captures need screenflare-ctl installed (see CONFIGURATION.md).
+TopLeft = { action = "ScreenflareCaptureArea", label = "Capture Area" }
+BottomLeft = { action = "ScreenflareToggleRecording", label = "Record / Stop" }
 
 [devices."receiver:aabbccdd:slot:1".lighting]
 enabled = true

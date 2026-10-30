@@ -65,6 +65,9 @@ pub enum Effect<'a> {
     Native(NativeAction),
     /// A power-user scripting escape hatch.
     Script(Script<'a>),
+    /// A Screenflare action, carried as the `screenflare-ctl` subcommand the
+    /// macOS injector runs (`capture-window`, `toggle`, …).
+    Screenflare(&'static str),
     /// Type this text via unicode input.
     Text(&'a str),
     /// Handled entirely by the agent/hook layer — DPI presets, SmartShift,
@@ -218,7 +221,17 @@ impl Action {
     ///
     /// This is the single exhaustive match over the full [`Action`]
     /// vocabulary that a new backend needs — see the module docs.
+    ///
+    /// # Panics
+    ///
+    /// Panics for a Screenflare action with no mapped subcommand, a programming
+    /// error that `screenflare_actions_are_pickable_mapped_and_persisted` rules
+    /// out.
     #[must_use]
+    #[expect(
+        clippy::expect_used,
+        reason = "the Screenflare arms and `screenflare_command` are one table; the catalogue test pins them"
+    )]
     pub fn effect(&self) -> Effect<'_> {
         match self {
             Action::None => Effect::None,
@@ -289,6 +302,19 @@ impl Action {
             Action::TypeText(text) => Effect::Text(text),
             Action::RunAppleScript(src) => Effect::Script(Script::AppleScript(src)),
             Action::RunShellCommand(cmd) => Effect::Script(Script::ShellCommand(cmd)),
+            Action::ScreenflareCaptureArea
+            | Action::ScreenflareCaptureWindow
+            | Action::ScreenflareCaptureFullscreen
+            | Action::ScreenflareCaptureScrolling
+            | Action::ScreenflareCaptureText
+            | Action::ScreenflareRecordDisplay
+            | Action::ScreenflareRecordWindow
+            | Action::ScreenflareRecordArea
+            | Action::ScreenflareToggleRecording
+            | Action::ScreenflareStopRecording => Effect::Screenflare(
+                self.screenflare_command()
+                    .expect("every Screenflare action maps to a screenflare-ctl subcommand"),
+            ),
             Action::Workflow(steps) => Effect::Script(Script::Workflow(steps)),
         }
     }

@@ -404,6 +404,43 @@ and the mouse reconnects at its saved speed, or at the speed for none saved.
 After an agent restart, precision mode is off. A mouse with a saved speed gets
 that speed when the agent connects to it. A mouse without one keeps the
 slowest speed until precision mode is switched on and off again.
+### Screenflare
+
+The `Screenflare*` actions drive [Screenflare](https://screenflare.app) — captures
+and screen recordings — from a mouse button or an Actions Ring slot. They are
+macOS-only and delegate to [`screenflare-ctl`](https://github.com/kvoon/screenflare-ctl),
+which presses the matching Screenflare menu item through the Accessibility API
+(Screenflare itself has no automation API, AppleScript dictionary or URL scheme).
+
+| Action | Screenflare | `screenflare-ctl` |
+| --- | --- | --- |
+| `ScreenflareCaptureArea` | Capture Screenshot (region) | `action capture-area` |
+| `ScreenflareCaptureWindow` | Capture Window | `action capture-window` |
+| `ScreenflareCaptureFullscreen` | Capture Fullscreen | `action capture-fullscreen` |
+| `ScreenflareCaptureScrolling` | Scrolling Capture | `action capture-scrolling` |
+| `ScreenflareCaptureText` | Capture Text (OCR) | `action capture-text` |
+| `ScreenflareRecordDisplay` | Record Display | `action record-display` |
+| `ScreenflareRecordWindow` | Record Window | `action record-window` |
+| `ScreenflareRecordArea` | Record Area | `action record-area` |
+| `ScreenflareToggleRecording` | Stop, or start a display recording | `toggle` |
+| `ScreenflareStopRecording` | Stop Recording | `action stop-recording` |
+
+```toml
+Back = "ScreenflareCaptureWindow"
+Forward = "ScreenflareToggleRecording"
+
+[devices."unit:aabbccdd".action_ring.default.slots]
+Top = { action = "ScreenflareCaptureArea", label = "Capture Area" }
+Left = { action = "ScreenflareToggleRecording", label = "Record / Stop" }
+```
+
+Every action runs `screenflare-ctl action <id> --no-wait --json` detached, so the
+gesture thread never waits for a capture over the user's overlay. The tool is
+found on `SCREENFLARE_CTL`, `~/bin`, `~/.local/bin`, `~/i/screenflare-ctl/bin`,
+`/opt/homebrew/bin`, `/usr/local/bin`, then `PATH`; when it is missing the action
+logs a warning and does nothing. Bindings still work without it — they just
+cannot capture.
+
 Payload actions use a one-key inline table:
 
 ```toml
