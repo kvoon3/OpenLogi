@@ -1,7 +1,9 @@
 # Fork notes — Screenflare actions
 
-This is a personal fork of [OpenLogi](https://github.com/AprilNEA/OpenLogi), based on
-upstream `433e414` (v0.8.19). It adds one thing upstream does not have: a
+A fork of [OpenLogi](https://github.com/AprilNEA/OpenLogi) (dual MIT/Apache-2.0), based
+on upstream `433e414` (v0.8.19), maintained under the `my-mouse` name — not an
+upstream project, and not affiliated with it. It adds one thing upstream does not
+have: a
 **`Screenflare*` action group**, so [Screenflare](https://screenflare.app)
 captures and recordings can be bound to a mouse button or placed in an Actions Ring
 slot, next to the ten stock Screenflare entries instead of an anonymous
@@ -28,7 +30,7 @@ variants join the catalogue. Each maps to one `screenflare-ctl` subcommand
 | `ScreenflareToggleRecording` | `toggle` (stop if recording, else record a display) |
 | `ScreenflareStopRecording` | `action stop-recording` |
 
-`screenflare-ctl` is the companion CLI in `~/i/screenflare-ctl`: a Swift binary that
+`screenflare-ctl` is the companion CLI in the companion `screenflare-ctl` CLI: a Swift binary that
 presses Screenflare's own menu items through the Accessibility API, because
 Screenflare ships no URL scheme, AppleScript dictionary, CLI or App Intents.
 
@@ -115,7 +117,7 @@ launched, the picker showing the Screenflare group, and a physical button press.
 agent (whose `PATH` is `/usr/bin:/bin:/usr/sbin:/sbin`) still finds a user install:
 
 1. `$SCREENFLARE_CTL`
-2. `~/bin`, `~/.local/bin`, `~/i/screenflare-ctl/bin`
+2. `~/bin`, `~/.local/bin`, `<screenflare-ctl checkout>/bin`
 3. `/opt/homebrew/bin`, `/usr/local/bin`
 4. every `PATH` entry
 
@@ -147,8 +149,8 @@ agent, so **restart OpenLogi** after installing.
 
 ## Trying it
 
-1. `make -C ~/i/screenflare-ctl install` (or leave `bin/screenflare-ctl` in place —
-   discovery covers `~/i/screenflare-ctl/bin`).
+1. `make -C <screenflare-ctl> install` (or leave its `bin/screenflare-ctl` in place —
+   discovery covers `<checkout>/bin`).
 2. `dist/bundle.sh && dist/install.sh` — quits OpenLogi, installs the fork, relaunches.
 3. The agent cannot start through SMAppService — re-signing trips launchd's
    launch constraint (`OS_REASON_CODESIGNING | Launch Constraint Violation`,

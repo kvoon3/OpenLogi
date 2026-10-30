@@ -408,7 +408,7 @@ slowest speed until precision mode is switched on and off again.
 
 The `Screenflare*` actions drive [Screenflare](https://screenflare.app) — captures
 and screen recordings — from a mouse button or an Actions Ring slot. They are
-macOS-only and delegate to [`screenflare-ctl`](https://github.com/kvoon/screenflare-ctl),
+macOS-only and delegate to [`screenflare-ctl`](https://github.com/my-mouse/screenflare-ctl),
 which presses the matching Screenflare menu item through the Accessibility API
 (Screenflare itself has no automation API, AppleScript dictionary or URL scheme).
 
