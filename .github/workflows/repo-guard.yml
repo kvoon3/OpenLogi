@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Reject app bundles, binaries and media
+      - name: Reject app bundles, oversized files and stray dist/ entries
         run: |
           set -eu
           failures=0
@@ -24,7 +24,13 @@ jobs:
               failures=1
             fi
           }
-          check "$(git ls-files '*.app/*' '*.app' | head -20)" "assembled .app bundles"
-          check "$(git ls-files '*.dylib' '*.mov' '*.mp4' '*.icns' '*.car' | head -20)" "binaries and media"
+          # A built .app is never source, wherever it appears.
+          check "$(git ls-files '*.app' '*.app/*' | head -20)" "assembled .app bundles"
+          # dist/ holds the three scripts and nothing else.
           check "$(git ls-files 'dist/*' | grep -v '\.sh$' | head -20)" "dist/ files other than the scripts"
+          # Anything this large is a binary, a recording or a built bundle. Upstream's
+          # own committed artwork stays under design/, docs/ and the icon directory.
+          check "$(git ls-files -z | xargs -0 -r stat -c '%s %n' 2>/dev/null \
+            | awk '$1 > 2000000' | grep -vE ' (design|docs|crates/openlogi-desktop/icon)/' | head -20)" \
+            "tracked files over 2 MB"
           exit "$failures"
