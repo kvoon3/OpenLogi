@@ -1,0 +1,30 @@
+name: repo-guard
+
+# One job, one job only: keep assembled bundles and screen captures out of the
+# repository. `dist/bundle.sh` builds a whole .app from an installed copy of the
+# upstream app, and that output once reached a commit by accident — a signed copy of
+# someone else's app is not ours to publish.
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  no-assembled-artifacts:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject app bundles, binaries and media
+        run: |
+          set -eu
+          failures=0
+          check() {
+            if [ -n "$1" ]; then
+              printf 'refusing %s:\n%s\n' "$2" "$1" >&2
+              failures=1
+            fi
+          }
+          check "$(git ls-files '*.app/*' '*.app' | head -20)" "assembled .app bundles"
+          check "$(git ls-files '*.dylib' '*.mov' '*.mp4' '*.icns' '*.car' | head -20)" "binaries and media"
+          check "$(git ls-files 'dist/*' | grep -v '\.sh$' | head -20)" "dist/ files other than the scripts"
+          exit "$failures"
