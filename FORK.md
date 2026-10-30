@@ -151,7 +151,12 @@ agent, so **restart OpenLogi** after installing.
    discovery covers `~/i/screenflare-ctl/bin`).
 2. `dist/bundle.sh && dist/install.sh` — quits OpenLogi, installs the fork, relaunches.
 3. Grant **Accessibility** and **Input Monitoring** to OpenLogi and OpenLogi Agent
-   again (the ad-hoc signature is new to TCC).
+   again (the ad-hoc signature is new to TCC), and allow the background item:
+   **System Settings ▸ General ▸ Login Items & Extensions ▸ Allow in the Background
+   ▸ OpenLogi**. Until that switch is on, `launchctl print gui/$UID/org.openlogi.agent.service`
+   reports `last exit code = 78: EX_CONFIG` and the GUI says it cannot reach the
+   background service — the agent simply never starts, so no binding fires. The
+   switch is per signature, so **every rebuild needs it again**.
 4. Button editor → action picker → **Screenflare**, or in `config.toml`:
 
 ```toml
@@ -166,6 +171,14 @@ Bottom = { action = "ScreenflareToggleRecording", label = "Record / Stop" }
 
 5. Press it. Expected: Screenflare's overlay appears, OpenLogi stays responsive, the
    finished file lands in `~/Screenflare/screenshots`.
+
+   To exercise the dispatch chain without a mouse, the fork ships an example that
+   calls the same `openlogi_inject::execute` a press does:
+
+   ```sh
+   cargo run -q -p openlogi-inject --example screenflare -- capture-fullscreen
+   cargo run -q -p openlogi-inject --example screenflare -- toggle
+   ```
 6. `dist/install.sh --rollback` restores the upstream bundle from `OpenLogi.upstream.app`.
 
 ## What this fork does not do

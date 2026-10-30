@@ -20,8 +20,9 @@ usage() {
 	exit "${1:-0}"
 }
 
+YES=0
 confirm() {
-	if [ "${1:-}" != "--yes" ]; then
+	if [ "$YES" != "1" ]; then
 		printf '%s\n' "$2"
 		printf 'Continue? [y/N] '
 		read -r answer
@@ -55,7 +56,7 @@ case ${1:-} in
 	echo "restored the upstream bundle"
 	exit 0
 	;;
---yes) shift ;;
+--yes) YES=1; shift ;;
 "") ;;
 *) usage 2 ;;
 esac
@@ -63,7 +64,7 @@ esac
 [ -d "$FORK" ] || { echo "build it first: $ROOT/dist/bundle.sh" >&2; exit 1; }
 [ -d "$TARGET" ] || echo "note: no bundle at $TARGET; nothing to back up"
 
-confirm "${1:-}" "This quits OpenLogi, moves the installed bundle to $BACKUP, installs the fork build, and relaunches."
+confirm "This quits OpenLogi, moves the installed bundle to $BACKUP, installs the fork build, and relaunches."
 
 stop_openlogi
 if [ -d "$TARGET" ] && [ ! -d "$BACKUP" ]; then
