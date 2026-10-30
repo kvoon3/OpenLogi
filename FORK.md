@@ -1,7 +1,7 @@
 # Fork notes — Screenflare actions
 
 A fork of [OpenLogi](https://github.com/AprilNEA/OpenLogi) (dual MIT/Apache-2.0), based
-on upstream `433e414` (v0.8.19), maintained under the `my-mouse` name — not an
+on upstream `433e414` (v0.8.19), maintained under the `kvoon3` account — not an
 upstream project, and not affiliated with it. It adds one thing upstream does not
 have: a
 **`Screenflare*` action group**, so [Screenflare](https://screenflare.app)
